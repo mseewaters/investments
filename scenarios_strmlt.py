@@ -62,6 +62,19 @@ df_savings = pd.DataFrame({
     "Returns ($K)": returns_in_thousands
 })
 
+
+tab1, tab2 = st.tabs(["📊 Graph", "📋 Data"])
+with tab1:
+    fig, ax = plt.subplots()
+    ax.plot(df_savings["Year"], df_savings["Savings ($)"], marker='o')
+    ax.set_title("Retirement Savings Projection")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Savings ($M)")
+    ax.grid(True)
+    st.pyplot(fig)
+with tab2:
+    st.dataframe(df_savings)
+
 ## Create two columns for the graph and table (2/3 width for graph, 1/3 for table)
 col3, col4 = st.columns([2, 1])
 
@@ -78,3 +91,4 @@ with col3:
 # Display the savings table in the second column (1/3 width)
 with col4:
     st.write(df_savings)
+
