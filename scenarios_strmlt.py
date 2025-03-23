@@ -1,7 +1,8 @@
+# Run code:  streamlit run scenarios_strmlt.py
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
 # Streamlit interface for user inputs
 st.title("Retirement Savings Model")
@@ -11,9 +12,9 @@ col1, col2 = st.columns(2)
 
 # Input fields in the first column
 with col1:
-    current_investments = st.number_input("Current Investments ($)", min_value=0, value=5000000)
+    current_investments = float(st.number_input("Current Investments ($)", min_value=0, value=5000000))
     annual_return = st.number_input("Annual Investment Return (%)", min_value=0.0, value=5.0)
-    monthly_spend = st.number_input("Monthly Spend ($)", min_value=0, value=10000)
+    monthly_spend = float(st.number_input("Monthly Spend ($)", min_value=0, value=10000))
 
 # Input fields in the second column
 with col2:
@@ -28,6 +29,7 @@ savings_by_year = []
 spend_by_year = []
 returns_by_year = []
 savings = current_investments
+returns = 0.0  # Initialize returns as a float
 
 for year in years:
     # Calculate the return on investments
