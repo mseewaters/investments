@@ -17,7 +17,7 @@ h2, h3, h4, h5 {
 
 /* Change font size of st.title */
 h1 {
-    font-size: 3rem !important;  /* adjust to your liking */
+    font-size: 2rem !important;  /* adjust to your liking */
     font-weight: bold !important;
     margin-bottom: 1rem;
 }
