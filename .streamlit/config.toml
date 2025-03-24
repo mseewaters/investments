@@ -1,0 +1,13 @@
+[theme]
+primaryColor = "#28A745"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F4ED"
+textColor = "#061826"
+font = "sans serif"  # Options: "sans serif", "serif", "monospace"
+
+[server]
+headless = true
+runOnSave = true
+
+[client]
+toolbarMode = "auto"

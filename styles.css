@@ -1,58 +1,65 @@
-/*
-White: #F4F4ED
-Green: #28A745
-Dark Green: #093824
-light grey: #8B8BAE
-dark grey: #374B4A
-charcoal: #061826 
-*/
+/* style.css */
 
+/* Base settings */
+body {
+    background-color: #F4F4ED; /* soft white */
+    color: #061826; /* charcoal */
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    font-size: 14px;
+    line-height: 1.0;
+}
 
+/* Headings */
+h2, h3, h4, h5 {
+    color: #093824; /* dark green */
+    margin-bottom: 0.5rem;
+}
 
+/* Change font size of st.title */
+h1 {
+    font-size: 3rem !important;  /* adjust to your liking */
+    font-weight: bold !important;
+    margin-bottom: 1rem;
+}
 
-/* styles.css */
+/* Buttons */
+button, .stButton>button {
+    background-color: #28A745; /* green */
+    color: #ffffff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+button:hover, .stButton>button:hover {
+    background-color: #093824; /* dark green */
+    cursor: pointer;
+}
+
+/* Sidebar */
 [data-testid="stSidebar"] {
-    width: 1000px;
-    background-color: #F4F4ED !important;
-}
-
-/* Change global font color */
-html, body, [class*="st-"] {
-    color: #000000; /* black */
-}
-
-/* Customize headers */
-h1, h2, h3, h4 {
-    color: #1565c0; /* blue */
+    background-color: #E9ECEF;
+    color: #061826; /* dark grey */
 }
 
 /* Remove border and shadow around expanders */
 [data-testid="stExpander"] details {
     border: none;
     box-shadow: none;
-    background-color: #e7e7f0 !important;
+    color: #061826;
 }
 
-/* Replace default arrow with + / - */
-[data-testid="stExpander"] summary::marker {
-    content: "+ ";
-    font-weight: bold;
-    color: #333;
+[data-testid="stExpander"] .st-expanderHeader {
+    color: #093824; /* your dark green */
+    font-size: 5rem;
 }
 
-/* When expanded, show - instead of + */
-[data-testid="stExpander"][open] summary::marker {
-    content: "- ";
+[data-testid="stExpander"] details summary p{
+    color: #093824; /* your dark green */
+    font-size: 1.1rem;
+    font-weight: bolder;
 }
 
-div[data-testid="stExpander"] details summary p{
-    font-size: 1rem;
-}
 
-[data-testid="stSidebar"][aria-expanded="true"] details {
-    height: 50% !important;
-  }
-
- [data-testid="stSidebar"][aria-expanded="false"]{
-    height: 50% !important;
- }

@@ -1,1 +1,22 @@
-{"projection_years": 10, "investment_return": 0.05, "initial_investment": 100000.0, "return_slider": 5.0, "monthly_contribution": 500.0}
+{
+    "current_contribution_self": 10000,
+    "assisted_age_spouse": 90,
+    "rate_mode": "Fixed",
+    "assisted_age_self": 90,
+    "birthday_spouse": "1960-02-22",
+    "current_cash": 9012,
+    "retire_date_self": "2028-09-01",
+    "retire_assisted": 15000,
+    "return_cash": 2.0,
+    "current_investment": 100000,
+    "retire_date_spouse": "2020-01-01",
+    "current_contribution_spouse": 10000,
+    "projection_years": 30,
+    "retire_luxury_spend": 1000,
+    "retire_income_spouse": 10000,
+    "retire_need_spend": 15000,
+    "return_investment": 8.0,
+    "birthday_self": "1972-08-09",
+    "retire_income_self": 10000,
+    "inflation": 3.5
+}
