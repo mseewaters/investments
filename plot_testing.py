@@ -25,4 +25,5 @@ ax.set_title("Simulation Outcomes")
 
 # Show in Streamlit
 st.pyplot(fig)
+st.write(df)
 
