@@ -1,5 +1,6 @@
 import json
 import datetime
+import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -61,14 +62,14 @@ defaults = {
     "retire_need_spend": 8000,
     "retire_luxury_spend": 1000,
     "retire_assisted": 7000,
-    "birthday_self": datetime.date(1972, 8, 9),
-    "birthday_spouse": datetime.date(1960, 2, 22),
-    "retire_date_self": datetime.date(2027, 9, 1),
-    "retire_date_spouse": datetime.date(2020, 1, 1),
-    "pension_date_self": datetime.date(2037, 9, 1),
-    "pension_date_spouse": datetime.date(2020, 1, 1),
-    "socsec_date_self": datetime.date(2037, 9, 1),
-    "socsec_date_spouse": datetime.date(2030, 1, 1),
+    "birthday_self": datetime.date(1980, 1, 1),
+    "birthday_spouse": datetime.date(1980, 1, 1),
+    "retire_date_self": datetime.date(2045, 1, 1),
+    "retire_date_spouse": datetime.date(2045, 1, 1),
+    "pension_date_self": datetime.date(2045, 1, 1),
+    "pension_date_spouse": datetime.date(2045, 1, 1),
+    "socsec_date_self": datetime.date(2045, 1, 1),
+    "socsec_date_spouse": datetime.date(2045, 1, 1),
     "assisted_age_self": 90,
     "assisted_age_spouse": 90,
     "life_expectancy_self": 95,
@@ -81,6 +82,7 @@ defaults = {
     "cash_set_point": 50000,
     "stock_allocation_pre_retirement": 80,
     "stock_allocation_post_retirement": 50,
+    "rate_mode": "Simulation",
 }
 
 for k, v in defaults.items():
@@ -138,6 +140,8 @@ with st.sidebar.expander("📅 Timing", expanded=False):
     st.date_input("Social security start date", value=st.session_state["socsec_date_spouse"], key="socsec_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
     st.number_input("Assisted Living Age", value=st.session_state["assisted_age_spouse"], key="assisted_age_spouse", step=1)
     st.number_input("Life Expectancy", value=st.session_state["life_expectancy_spouse"], key="life_expectancy_spouse", step=1)
+    
+    st.markdown("<br><small style='color:#093824'>Use 2020/01/01 for retirement, pension, and social security dates in the past.</small><br>", unsafe_allow_html=True)
 
 with st.sidebar.expander("💰 Portfolio", expanded=False):
     st.markdown("<br><b style='color:#093824'>Savings</b><br>", unsafe_allow_html=True)
@@ -152,18 +156,15 @@ st.markdown("<style>div[data-testid='stSelectbox'] label {display: none;}</style
 
 with st.sidebar.expander("📈 Rates", expanded=False):
     st.markdown("<br><b>Enter static values, use historical averages from 1928-2024, or see a simulation using past rates</b><br>", unsafe_allow_html=True)
-    rate_mode = st.selectbox(" ", ["User Input","Historical","Simulation"], key="rate_mode")
+    rate_mode = st.selectbox(" ", ["User Input","Historical","Simulation"], index=2, key="rate_mode")
 
     if rate_mode == "User Input":
         st.markdown("<br><b>Static Rate Inputs</b><br>", unsafe_allow_html=True)
-    
-        st.slider("Inflation Rate (%)", 0.0, 5.0, value=st.session_state["inflation"], step=0.1, key="inflation")
-        st.slider("Return on Cash (%)", 0.0, 5.0, value=st.session_state["return_cash"], step=0.1, key="return_cash")
-        st.slider("Return on Stocks (%)", 0.0, 15.0, value=st.session_state["return_stock"], step=0.1, key="return_stock")
-        st.slider("Return on Bonds (%)", 0.0, 15.0, value=st.session_state["return_bond"], step=0.1, key="return_bond")
-        
+        st.number_input("Inflation Rate (%)", value=st.session_state["inflation"], step=0.1, key="inflation", min_value=0.1, max_value=10.0)
+        st.number_input("Return on Cash (%)", value=st.session_state["return_cash"], step=0.1, key="return_cash", min_value=0.1, max_value=10.0)
+        st.number_input("Return on Stocks (%)", value=st.session_state["return_stock"], step=0.1, key="return_stock", min_value=0.1, max_value=15.0)
+        st.number_input("Return on Bonds (%)", value=st.session_state["return_bond"], step=0.1, key="return_bond", min_value=0.1, max_value=15.0)
 
-save_state()
 
 # --- Calculations ---
 
@@ -194,8 +195,8 @@ def run_simulation(mode="Historical",rate_table_sample=None):
     elif mode == "User Input":
         r_stock = np.full(months, (1 + st.session_state.return_stock / 100) ** (1/12) - 1)
         r_bond = np.full(months, (1 + st.session_state.return_bond / 100) ** (1/12) - 1)
-        r_cash = np.full(months, (1 + st.session_state.return_cash/100) ** (1/12) - 1)
-        r_infl = np.full(months, (1 + st.session_state.inflation/100) ** (1/12) - 1)
+        r_cash = np.full(months, (1 + st.session_state.return_cash / 100) ** (1/12) - 1)
+        r_infl = np.full(months, (1 + st.session_state.inflation / 100) ** (1/12) - 1)
     else:
         geo_mean_annual = np.prod(1 + rate_table["Stocks"]) ** (1 / len(rate_table["Stocks"])) - 1
         r_stock = np.full(months, (1 + geo_mean_annual) ** (1/12) - 1)
@@ -330,6 +331,7 @@ def run_simulation(mode="Historical",rate_table_sample=None):
 with st.spinner("Running simulations..."):
     if rate_mode == "Simulation":
         results = run_simulation(mode="Historical")
+        last_value = results['Total'].iloc[-1]
         
         n_simulations = 100
         all_totals = []
@@ -341,10 +343,13 @@ with st.spinner("Running simulations..."):
         simulation_df = pd.DataFrame(all_totals).T  # Transpose so rows = months, columns = runs
         simulation_df.insert(0, "Month", sim_result["Date"])  # Add dates as first column
         simulation_df.insert(1, "Historical", results["Total"])  # Add dates as first column
+        median_series = simulation_df.iloc[:, 2:].median(axis=1)
+        last_value_likely = median_series.iloc[-1]
 
     else:
         n_simulations = 1
         results = run_simulation(mode=rate_mode)
+        last_value = results['Total'].iloc[-1]
 
 def plot_outcome(mode="Historical",results=None):
     if mode == "Simulation":
@@ -376,27 +381,42 @@ def plot_outcome(mode="Historical",results=None):
     return fig
 
 # Plot
+# Tabs for Graph and Data
 tab1, tab2 = st.tabs(["📊 Graph", "📋 Data"])
+
 with tab1:
-    st.markdown("<b>Projected Portfolio Value (today's dollars, inflation adjusted)</b>", unsafe_allow_html=True)
 
     if rate_mode == "Simulation":
-        fig = plot_outcome(mode=rate_mode,results=simulation_df)
+        final_val = f"${last_value_likely/1e6:,.1f}M"
+        fig = plot_outcome(mode=rate_mode, results=simulation_df)
     else:
-        fig = plot_outcome(mode=rate_mode,results=results)
+        final_val = f"${last_value/1e6:,.1f}M"
+        fig = plot_outcome(mode=rate_mode, results=results)
+
+    st.markdown("#### Projected Portfolio Value")
+    st.markdown(f"<div style='font-size: 0.9em; color: #28A745; font-weight: bold'>Expected value at end of life: {final_val}</div>", unsafe_allow_html=True)
+
+    st.caption("All values in today's dollars (inflation adjusted)")
 
     st.pyplot(fig, use_container_width=True)
 
+    # Metrics and explanatory note
     if rate_mode == "Simulation":
-        st.markdown("<small>Most Likely Outcome will be higher than Historical due to how luxury spend is incorporated.  Luxury spend is only considered when stock returns are higher than inflation.  For Historical averages, this is applied evenly to every month, in simulation it is dynamically dependent on each months distribution.</small>", unsafe_allow_html=True)
-    
+        st.caption(
+            "ℹ️ *Most Likely Outcome is typically higher than Historical due to how luxury spend is modeled.* "
+            "Luxury spending only occurs when stock returns exceed inflation. In historical mode, this is applied evenly; "
+            "in simulation, it's dynamically based on each month's return."
+        )      
 
 with tab2:
     if rate_mode == "Simulation":
-        st.markdown("<b>Historical average returns data shown for simulation</b><br>", unsafe_allow_html=True)
-    st.write(results)
+        st.markdown("**Historical Average Returns (used in simulation baseline):**")
+    st.dataframe(results, use_container_width=True)
+
 
 
 if st.button("💾 Save Inputs"):
     save_state()
     st.success("Inputs saved!")
+
+save_state()
