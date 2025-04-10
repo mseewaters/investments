@@ -1,5 +1,6 @@
 import json
 import datetime
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,23 +22,23 @@ def load_external_data():
 
 rate_table = load_external_data()
 
-def save_state(filename="user_inputs.json"):
+def save_state(filename="tmp/user_inputs.json"):
     def convert(o):
         if isinstance(o, datetime.date):
             return o.isoformat()
         return o
 
     try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as f:
             json.dump({k: convert(v) for k, v in st.session_state.items()}, f, indent=4)
-        # st.success("State saved successfully!")  # Feedback for debugging
     except Exception as e:
         st.error(f"Error saving state: {e}")
 
 # Load from saved file each time
 def safe_load():
     try:
-        with open("user_inputs.json", "r") as f:
+        with open("tmp/user_inputs.json", "r") as f:
             saved = json.load(f)
             for k, v in saved.items():
                 if "date" in k or "birthday" in k:
@@ -90,7 +91,7 @@ for k, v in defaults.items():
 
 today_date = datetime.date.today()
 min_birthdate = datetime.date(1925, 1, 1)
-min_retiredate = datetime.date(2020, 1, 1)
+min_retiredate = datetime.date(2000, 1, 1)
 
 # Calculate max retirement date based on life expectancy
 max_retire_date_self = st.session_state["birthday_self"] + datetime.timedelta(days=365 * st.session_state["life_expectancy_self"])
@@ -107,48 +108,48 @@ st.sidebar.markdown("<br><b style='color:#061826'>Enter your values below</b><br
 
 with st.sidebar.expander("🤑 Income", expanded=False):
     st.markdown("<br><b style='color:#093824'>Monthly Income (Self)</b><br>", unsafe_allow_html=True)
-    st.number_input("Savings Before Retirement ($)", value=st.session_state["current_contribution_self"], step=1000, key="current_contribution_self")
-    st.number_input("Retirement Income ($)", value=st.session_state["retire_income_self"], step=1000, key="retire_income_self")
-    st.number_input("Social Security Income ($)", value=st.session_state["socsec_income_self"], step=1000, key="socsec_income_self")
+    st.number_input("Savings Before Retirement ($)", step=1000, key="current_contribution_self")
+    st.number_input("Retirement Income ($)", step=1000, key="retire_income_self")
+    st.number_input("Social Security Income ($)", step=1000, key="socsec_income_self")
 
     st.markdown("<br><b style='color:#093824'>Monthly Income (Spouse)</b><br>", unsafe_allow_html=True)
-    st.number_input("Savings Before Retirement ($)", value=st.session_state["current_contribution_spouse"], step=1000, key="current_contribution_spouse")
-    st.number_input("Retirement Income ($)", value=st.session_state["retire_income_spouse"], step=1000, key="retire_income_spouse")
-    st.number_input("Social Security Income ($)", value=st.session_state["socsec_income_spouse"], step=1000, key="socsec_income_spouse")
+    st.number_input("Savings Before Retirement ($)", step=1000, key="current_contribution_spouse")
+    st.number_input("Retirement Income ($)", step=1000, key="retire_income_spouse")
+    st.number_input("Social Security Income ($)", step=1000, key="socsec_income_spouse")
 
 with st.sidebar.expander("💳 Spend", expanded=False):
     st.markdown("<br><b style='color:#093824'>Monthly Spending</b><br>", unsafe_allow_html=True)
-    st.number_input("Retirement Needed Spend ($)", value=st.session_state["retire_need_spend"], step=1000, key="retire_need_spend")
-    st.number_input("Incremental Luxury Spend ($)", value=st.session_state["retire_luxury_spend"], step=1000, key="retire_luxury_spend")
-    st.number_input("Assisted Living Spend ($)", value=st.session_state["retire_assisted"], step=1000, key="retire_assisted")
+    st.number_input("Retirement Needed Spend ($)", step=1000, key="retire_need_spend")
+    st.number_input("Incremental Luxury Spend ($)", step=1000, key="retire_luxury_spend")
+    st.number_input("Assisted Living Spend ($)", step=1000, key="retire_assisted")
 
 
 with st.sidebar.expander("📅 Timing", expanded=False):
     st.markdown("<br><b style='color:#093824'>Self</b><br>", unsafe_allow_html=True)
-    st.date_input("Birthday", value=st.session_state["birthday_self"], key="birthday_self",min_value=min_birthdate, max_value=today_date)
-    st.date_input("Retirement Date", value=st.session_state["retire_date_self"], key="retire_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.date_input("Pension/distribution start date", value=st.session_state["pension_date_self"], key="pension_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.date_input("Social security start date", value=st.session_state["socsec_date_self"], key="socsec_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.number_input("Assisted Living Age", value=st.session_state["assisted_age_self"], key="assisted_age_self", step=1)
-    st.number_input("Life Expectancy", value=st.session_state["life_expectancy_self"], key="life_expectancy_self", step=1)
+    st.date_input("Birthday", key="birthday_self",min_value=min_birthdate, max_value=today_date)
+    st.date_input("Retirement Date", key="retire_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
+    st.date_input("Pension/distribution start date", key="pension_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
+    st.date_input("Social security start date", key="socsec_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
+    st.number_input("Assisted Living Age", key="assisted_age_self", step=1)
+    st.number_input("Life Expectancy", key="life_expectancy_self", step=1)
 
     st.markdown("<br><b style='color:#093824'>Spouse</b><br>", unsafe_allow_html=True)
-    st.date_input("Birthday", value=st.session_state["birthday_spouse"], key="birthday_spouse",min_value=min_birthdate, max_value=today_date)
-    st.date_input("Retirement Date", value=st.session_state["retire_date_spouse"], key="retire_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.date_input("Pension/distribution start date", value=st.session_state["pension_date_spouse"], key="pension_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.date_input("Social security start date", value=st.session_state["socsec_date_spouse"], key="socsec_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.number_input("Assisted Living Age", value=st.session_state["assisted_age_spouse"], key="assisted_age_spouse", step=1)
-    st.number_input("Life Expectancy", value=st.session_state["life_expectancy_spouse"], key="life_expectancy_spouse", step=1)
+    st.date_input("Birthday", key="birthday_spouse",min_value=min_birthdate, max_value=today_date)
+    st.date_input("Retirement Date", key="retire_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
+    st.date_input("Pension/distribution start date", key="pension_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
+    st.date_input("Social security start date", key="socsec_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
+    st.number_input("Assisted Living Age", key="assisted_age_spouse", step=1)
+    st.number_input("Life Expectancy", key="life_expectancy_spouse", step=1)
     
     st.markdown("<br><small style='color:#093824'>Use 2020/01/01 for retirement, pension, and social security dates in the past.</small><br>", unsafe_allow_html=True)
 
 with st.sidebar.expander("💰 Portfolio", expanded=False):
     st.markdown("<br><b style='color:#093824'>Savings</b><br>", unsafe_allow_html=True)
-    st.number_input("Current Cash Savings ($)", value=st.session_state["current_cash"], step=1000, key="current_cash")
-    st.number_input("Desired Cash On Hand ($)", value=st.session_state["cash_set_point"], step=1000, key="cash_set_point")
-    st.number_input("Current Investment Savings ($)", value=st.session_state["current_investment"], step=1000, key="current_investment")
-    st.number_input("Stock (vs. bonds) allocation before retirement (%)", value=st.session_state["stock_allocation_pre_retirement"],key="stock_allocation_pre_retirement", step=10, min_value=0, max_value=100)
-    st.number_input("Stock (vs. bonds) allocation after retirement (%)", value=st.session_state["stock_allocation_post_retirement"],key="stock_allocation_post_retirement", step=10, min_value=0, max_value=100)
+    st.number_input("Current Cash Savings ($)", step=1000, key="current_cash")
+    st.number_input("Desired Cash On Hand ($)", step=1000, key="cash_set_point")
+    st.number_input("Current Investment Savings ($)", step=1000, key="current_investment")
+    st.number_input("Stock (vs. bonds) allocation before retirement (%)", key="stock_allocation_pre_retirement", step=10, min_value=0, max_value=100)
+    st.number_input("Stock (vs. bonds) allocation after retirement (%)", key="stock_allocation_post_retirement", step=10, min_value=0, max_value=100)
 
 # Hide selectbox label visually
 st.markdown("<style>div[data-testid='stSelectbox'] label {display: none;}</style>", unsafe_allow_html=True)
@@ -159,10 +160,10 @@ with st.sidebar.expander("📈 Rates", expanded=False):
 
     if rate_mode == "User Input":
         st.markdown("<br><b>Static Rate Inputs</b><br>", unsafe_allow_html=True)
-        st.number_input("Inflation Rate (%)", value=st.session_state["inflation"], step=0.1, key="inflation", min_value=0.1, max_value=10.0)
-        st.number_input("Return on Cash (%)", value=st.session_state["return_cash"], step=0.1, key="return_cash", min_value=0.1, max_value=10.0)
-        st.number_input("Return on Stocks (%)", value=st.session_state["return_stock"], step=0.1, key="return_stock", min_value=0.1, max_value=15.0)
-        st.number_input("Return on Bonds (%)", value=st.session_state["return_bond"], step=0.1, key="return_bond", min_value=0.1, max_value=15.0)
+        st.number_input("Inflation Rate (%)", step=0.1, key="inflation", min_value=0.1, max_value=10.0)
+        st.number_input("Return on Cash (%)", step=0.1, key="return_cash", min_value=0.1, max_value=10.0)
+        st.number_input("Return on Stocks (%)", step=0.1, key="return_stock", min_value=0.1, max_value=15.0)
+        st.number_input("Return on Bonds (%)", step=0.1, key="return_bond", min_value=0.1, max_value=15.0)
 
 
 # --- Calculations ---
@@ -173,7 +174,7 @@ end_date_self = st.session_state.birthday_self.replace(year=st.session_state.bir
 end_date_spouse = st.session_state.birthday_spouse.replace(year=st.session_state.birthday_spouse.year + st.session_state.life_expectancy_spouse)
 
 final_date = max(end_date_self, end_date_spouse)
-months = (final_date.year - datetime.date.today().year) * 12 + (final_date.month - datetime.date.today().month)
+months = max((final_date.year - datetime.date.today().year) * 12 + (final_date.month - datetime.date.today().month),0)
 
 dates = np.array([datetime.date.today() + datetime.timedelta(days=30*i) for i in range(months)])
 
@@ -381,7 +382,7 @@ def plot_outcome(mode="Historical",results=None):
 
 # Plot
 # Tabs for Graph and Data
-tab1, tab2 = st.tabs(["📊 Graph", "📋 Data"])
+tab1, tab2, tab3 = st.tabs(["📊 Graph", "📋 Data", "⚙️ Methodology"])
 
 with tab1:
 
@@ -412,7 +413,51 @@ with tab2:
         st.markdown("**Historical Average Returns (used in simulation baseline):**")
     st.dataframe(results, use_container_width=True)
 
+with tab3:
+    st.markdown("### ⚙️ How the Forecast Is Created")
 
+    st.markdown("""
+        This retirement forecast estimates your future finances month by month, starting today and continuing through the end of life for you and your spouse. It considers your income, spending, savings, and how your money might grow or shrink over time.
+
+        ---
+
+        #### 🗓️ 1. We Build a Timeline
+        We start by figuring out how long to run the forecast — from today until the end of the longest expected life. Every month between now and then is included in the simulation.
+
+        #### 📈 2. We Estimate Future Growth
+        Each month, your investments (like cash, bonds, and stocks) are expected to change in value. These changes can come from:
+        - Sampled historical data (to simulate possible futures),
+        - Fixed return values you choose,
+        - Or long-term average returns.
+
+        We also include inflation — the general rise in prices over time — to keep everything in today’s dollars.
+
+        #### 💰 3. We Track Money In and Out
+        Every month, we calculate:
+        - **Income**: Money you contribute before retirement, plus pensions and other income after.
+        - **Spending**: Monthly needs, luxury spending (if the market does well), and assisted care costs in later years.
+
+        #### 🔁 4. We Update Your Balances
+        Each month:
+        - Extra income adds to cash.
+        - If income isn’t enough, we withdraw from cash and investments.
+        - If cash gets too low, we move money from investments.
+        - Your investment mix shifts gradually once you're retired.
+
+        #### 🧮 5. We Show Everything in Today’s Dollars
+        To make results meaningful, all future amounts are adjusted for inflation so you can understand them in today’s terms.
+
+        #### 📊 6. We Share the Results
+        You’ll see:
+        - How your money changes over time
+        - Your income and spending
+        - Age-based costs
+        - Whether your savings support your lifestyle
+
+        ---
+
+        This helps you explore different scenarios and make informed choices about your retirement plans.
+        """)
 
 if st.button("💾 Save Inputs"):
     save_state()
