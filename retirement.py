@@ -1,6 +1,5 @@
 import json
 import datetime
-import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -418,5 +417,3 @@ with tab2:
 if st.button("💾 Save Inputs"):
     save_state()
     st.success("Inputs saved!")
-
-save_state()
