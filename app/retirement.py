@@ -14,15 +14,15 @@ def load_css(file_path):
     with open(file_path, "r") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-load_css("styles.css")
+load_css("app/styles.css")
 
 @st.cache_data
 def load_external_data():
-    return pd.read_csv("hist_data.csv")
+    return pd.read_csv("app/hist_data.csv")
 
 rate_table = load_external_data()
 
-def save_state(filename="tmp/user_inputs.json"):
+def save_state(filename="app/tmp/user_inputs.json"):
     def convert(o):
         if isinstance(o, datetime.date):
             return o.isoformat()
@@ -38,7 +38,7 @@ def save_state(filename="tmp/user_inputs.json"):
 # Load from saved file each time
 def safe_load():
     try:
-        with open("tmp/user_inputs.json", "r") as f:
+        with open("app/tmp/user_inputs.json", "r") as f:
             saved = json.load(f)
             for k, v in saved.items():
                 if "date" in k or "birthday" in k:
