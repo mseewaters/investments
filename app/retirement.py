@@ -5,9 +5,230 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+import uuid
+import boto3
+import base64
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # Page config
 st.set_page_config(page_title="Retirement Calculator", layout="wide")
+
+# --- S3 Configuration ---
+S3_BUCKET_NAME = "retirement-savings-calculator" 
+s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+
+# --- Encryption Utilities ---
+def generate_key_from_password(password, salt=None):
+    """Generate a Fernet key from a password and optional salt."""
+    if salt is None:
+        salt = os.urandom(16)
+    
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key, salt
+
+def encrypt_data(data, password):
+    """Encrypt data using a password."""
+    key, salt = generate_key_from_password(password)
+    fernet = Fernet(key)
+    encrypted_data = fernet.encrypt(json.dumps(data).encode())
+    return encrypted_data, salt
+
+def decrypt_data(encrypted_data, password, salt):
+    """Decrypt data using a password and salt."""
+    key, _ = generate_key_from_password(password, salt)
+    fernet = Fernet(key)
+    decrypted_data = fernet.decrypt(encrypted_data).decode()
+    return json.loads(decrypted_data)
+
+# --- Storage Utilities ---
+def save_state_to_s3(user_id, password, filename=None):
+    """Save state to S3 with encryption."""
+    def convert(o):
+        if isinstance(o, datetime.date):
+            return o.isoformat()
+        return o
+    
+    try:
+        # Prepare data
+        data = {k: convert(v) for k, v in st.session_state.items() 
+                if k not in ['user_id', 'password']}
+        
+        # Encrypt data
+        encrypted_data, salt = encrypt_data(data, password)
+        
+        # Add metadata
+        metadata = {
+            'salt': base64.b64encode(salt).decode(),
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+        # Save to S3
+        filename = f"user_data/{user_id}.enc"
+            
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=filename,
+            Body=encrypted_data,
+            Metadata=metadata
+        )
+        
+        # Store user_id in session state
+        st.session_state['user_id'] = user_id
+        return True
+    except Exception as e:
+        st.error(f"Error saving state: {e}")
+        return False
+
+def load_state_from_s3(user_id, password):
+    """Load state from S3 and decrypt."""
+    try:
+        # Get file from S3
+        response = s3_client.get_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=f"user_data/{user_id}.enc"
+        )
+        
+        # Get encrypted data and metadata
+        encrypted_data = response['Body'].read()
+        metadata = response['Metadata']
+        salt = base64.b64decode(metadata['salt'])
+        
+        # Decrypt data
+        data = decrypt_data(encrypted_data, password, salt)
+        
+        # Update session state
+        for k, v in data.items():
+            if "date" in k or "birthday" in k:
+                v = datetime.date.fromisoformat(v)
+            st.session_state[k] = v
+        
+        # Store user_id in session state
+        st.session_state['user_id'] = user_id
+        return True
+    except Exception as e:
+        st.error(f"Error loading state: {e}")
+        return False
+
+# --- Streamlit User Interface for Data Management ---
+def render_data_management_ui():
+    with st.sidebar.expander("💾 Save & Load Data", expanded=False):
+        # Check if user has a stored ID
+        has_user_id = 'user_id' in st.session_state and st.session_state['user_id']
+        
+        if has_user_id:
+            # RETURNING USER EXPERIENCE
+            st.markdown(f"<b>Your Data ID:</b> <code>{st.session_state['user_id']}</code>", unsafe_allow_html=True)
+            st.caption("Save this ID to access your data on other devices.")
+            
+            # Password field
+            password = st.text_input(
+                "Password for encryption", 
+                type="password",
+                help="We never store this password. You'll need it to access your data in the future."
+            )
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("💾 Save Data", use_container_width=True):
+                    if not password:
+                        st.error("Please enter a password")
+                    else:
+                        if save_state_to_s3(st.session_state['user_id'], password):
+                            st.success("Data saved!")
+            
+            with col2:
+                if st.button("🔄 Load Data", use_container_width=True):
+                    if not password:
+                        st.error("Please enter a password")
+                    else:
+                        if load_state_from_s3(st.session_state['user_id'], password):
+                            st.success("Data loaded!")
+            
+            # Simple message about saving data ID
+            st.divider()
+            st.caption("Make sure to save your Data ID somewhere secure - you'll need it if you use a different device.")
+        
+        else:
+            # FIRST-TIME USER EXPERIENCE
+            # Use tabs to clearly separate the two options
+            tab1, tab2 = st.tabs(["New User", "Returning User"])
+            
+            with tab1:
+                st.markdown("#### Create a new profile")
+                st.caption("First time using the calculator? Create a new profile to save your data.")
+                
+                password = st.text_input(
+                    "Create a password", 
+                    type="password",
+                    key="new_password",
+                    help="This password will encrypt your data. We never store this password."
+                )
+                
+                if st.button("🆕 Create New Profile", use_container_width=True):
+                    if not password:
+                        st.error("Please enter a password")
+                    else:
+                        new_user_id = str(uuid.uuid4())
+                        if save_state_to_s3(new_user_id, password):
+                            st.success(f"New profile created!")
+                            st.session_state['user_id'] = new_user_id
+                            # Store in browser
+                            st.markdown(
+                                f"""
+                                <script>
+                                    localStorage.setItem('retirementCalculatorUserId', '{new_user_id}');
+                                </script>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                            st.rerun()
+            
+            with tab2:
+                st.markdown("#### Load existing data")
+                st.caption("Already have a profile? Enter your Data ID and password.")
+                
+                existing_id = st.text_input(
+                    "Your Data ID",
+                    help="Enter the Data ID you received when you first created your profile"
+                )
+                
+                password = st.text_input(
+                    "Your password", 
+                    type="password",
+                    key="existing_password",
+                    help="The password you used to encrypt your data"
+                )
+                
+                if st.button("📂 Load My Data", use_container_width=True):
+                    if not existing_id:
+                        st.error("Please enter your Data ID")
+                    elif not password:
+                        st.error("Please enter your password")
+                    else:
+                        if load_state_from_s3(existing_id, password):
+                            st.success("Data loaded successfully!")
+                            st.session_state['user_id'] = existing_id
+                            # Store in browser
+                            st.markdown(
+                                f"""
+                                <script>
+                                    localStorage.setItem('retirementCalculatorUserId', '{existing_id}');
+                                </script>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                            st.rerun()
+                        else:
+                            st.error("Failed to load data. Check your ID and password.")
 
 # --- Utilities ---
 def load_css(file_path):
@@ -20,35 +241,8 @@ load_css("app/styles.css")
 def load_external_data():
     return pd.read_csv("app/hist_data.csv")
 
+# Cache rate table from csv file
 rate_table = load_external_data()
-
-def save_state(filename="app/tmp/user_inputs.json"):
-    def convert(o):
-        if isinstance(o, datetime.date):
-            return o.isoformat()
-        return o
-
-    try:
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "w") as f:
-            json.dump({k: convert(v) for k, v in st.session_state.items()}, f, indent=4)
-    except Exception as e:
-        st.error(f"Error saving state: {e}")
-
-# Load from saved file each time
-def safe_load():
-    try:
-        with open("app/tmp/user_inputs.json", "r") as f:
-            saved = json.load(f)
-            for k, v in saved.items():
-                if "date" in k or "birthday" in k:
-                    v = datetime.date.fromisoformat(v)
-                if k not in st.session_state:
-                    st.session_state[k] = v
-    except:
-        pass  # okay to ignore errors silently for now
-
-safe_load()
 
 defaults = {
     "current_investment": 1000000,
@@ -103,6 +297,9 @@ def age_on_date(birthdate, date):
 
 # --- Streamlit App ---
 st.title("Retirement Savings Model")
+
+# Add the data management UI to sidebar
+render_data_management_ui()
 
 st.sidebar.markdown("<br><b style='color:#061826'>Enter your values below</b><br>", unsafe_allow_html=True)
 
@@ -458,7 +655,3 @@ with tab3:
 
         This helps you explore different scenarios and make informed choices about your retirement plans.
         """)
-
-if st.button("💾 Save Inputs"):
-    save_state()
-    st.success("Inputs saved!")
