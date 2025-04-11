@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import uuid
-import boto3
 import base64
+import boto3
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -119,20 +119,21 @@ def load_state_from_s3(user_id, password):
 
 # --- Streamlit User Interface for Data Management ---
 def render_data_management_ui():
+    """Render an improved data management UI component"""
     with st.sidebar.expander("💾 Save & Load Data", expanded=False):
         # Check if user has a stored ID
         has_user_id = 'user_id' in st.session_state and st.session_state['user_id']
         
         if has_user_id:
             # RETURNING USER EXPERIENCE
-            st.markdown(f"<b>Your Data ID:</b> <code>{st.session_state['user_id']}</code>", unsafe_allow_html=True)
-            st.caption("Save this ID to access your data on other devices.")
+            st.markdown(f"<b>Your Data ID:</b>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color:#F4F4ED; padding:8px; border-left:3px solid #28A745; font-family:monospace; font-size:0.8rem; word-break:break-all;'>{st.session_state['user_id']}</div>", unsafe_allow_html=True)
             
             # Password field
             password = st.text_input(
                 "Password for encryption", 
                 type="password",
-                help="We never store this password. You'll need it to access your data in the future."
+                help="Enter your password to save or load data"
             )
             
             col1, col2 = st.columns(2)
@@ -140,7 +141,7 @@ def render_data_management_ui():
             with col1:
                 if st.button("💾 Save Data", use_container_width=True):
                     if not password:
-                        st.error("Please enter a password")
+                        st.error("Please enter your password")
                     else:
                         if save_state_to_s3(st.session_state['user_id'], password):
                             st.success("Data saved!")
@@ -148,29 +149,25 @@ def render_data_management_ui():
             with col2:
                 if st.button("🔄 Load Data", use_container_width=True):
                     if not password:
-                        st.error("Please enter a password")
+                        st.error("Please enter your password")
                     else:
                         if load_state_from_s3(st.session_state['user_id'], password):
                             st.success("Data loaded!")
             
-            # Simple message about saving data ID
-            st.divider()
-            st.caption("Make sure to save your Data ID somewhere secure - you'll need it if you use a different device.")
+            st.markdown("<small>Save your Data ID somewhere secure - you'll need it to access your data on other devices.</small>", unsafe_allow_html=True)
         
         else:
-            # FIRST-TIME USER EXPERIENCE
-            # Use tabs to clearly separate the two options
+            # FIRST-TIME USER EXPERIENCE - Use tabs for clarity
             tab1, tab2 = st.tabs(["New User", "Returning User"])
             
             with tab1:
-                st.markdown("#### Create a new profile")
-                st.caption("First time using the calculator? Create a new profile to save your data.")
+                st.markdown("<small>First time? Create a new profile to save your data</small>", unsafe_allow_html=True)
                 
                 password = st.text_input(
                     "Create a password", 
                     type="password",
                     key="new_password",
-                    help="This password will encrypt your data. We never store this password."
+                    help="This password will encrypt your data"
                 )
                 
                 if st.button("🆕 Create New Profile", use_container_width=True):
@@ -179,7 +176,7 @@ def render_data_management_ui():
                     else:
                         new_user_id = str(uuid.uuid4())
                         if save_state_to_s3(new_user_id, password):
-                            st.success(f"New profile created!")
+                            st.success(f"Profile created!")
                             st.session_state['user_id'] = new_user_id
                             # Store in browser
                             st.markdown(
@@ -193,12 +190,11 @@ def render_data_management_ui():
                             st.rerun()
             
             with tab2:
-                st.markdown("#### Load existing data")
-                st.caption("Already have a profile? Enter your Data ID and password.")
+                st.markdown("<small>Have a profile? Enter your Data ID to load it</small>", unsafe_allow_html=True)
                 
                 existing_id = st.text_input(
                     "Your Data ID",
-                    help="Enter the Data ID you received when you first created your profile"
+                    help="Enter your Data ID from a previous session"
                 )
                 
                 password = st.text_input(
@@ -208,14 +204,14 @@ def render_data_management_ui():
                     help="The password you used to encrypt your data"
                 )
                 
-                if st.button("📂 Load My Data", use_container_width=True):
+                if st.button("📂 Load Existing Data", use_container_width=True):
                     if not existing_id:
                         st.error("Please enter your Data ID")
                     elif not password:
                         st.error("Please enter your password")
                     else:
                         if load_state_from_s3(existing_id, password):
-                            st.success("Data loaded successfully!")
+                            st.success("Data loaded!")
                             st.session_state['user_id'] = existing_id
                             # Store in browser
                             st.markdown(
@@ -229,6 +225,201 @@ def render_data_management_ui():
                             st.rerun()
                         else:
                             st.error("Failed to load data. Check your ID and password.")
+
+
+# --- Sidebar UI Components ---
+def render_sidebar_ui():
+    """Render the entire sidebar UI with all input sections"""
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<b style='font-size: 1.3em; color:#061826'>Enter your information below</b>", unsafe_allow_html=True)
+    
+    # Render each section of the sidebar
+    render_income_section()
+    render_spending_section()
+    render_timing_section()
+    render_portfolio_section()
+    render_rates_section()
+
+
+def render_income_section():
+    """Render the income section with self/spouse columns"""
+    with st.sidebar.expander("🤑 Monthly Income", expanded=False):
+        # Header row
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("<b style='color:#093824'>Self</b>", unsafe_allow_html=True)
+        with col2:
+            st.markdown("<b style='color:#093824'>Spouse</b>", unsafe_allow_html=True)
+            
+        # Pre-retirement savings
+        st.markdown("Pre-Retirement Savings ($/mo)", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input("Savings Self", step=1000, key="current_contribution_self", 
+                          help="Monthly amount saved during working years",
+                          label_visibility="collapsed")
+        with col2:
+            st.number_input("Savings Spouse", step=1000, key="current_contribution_spouse",
+                          help="Monthly amount saved during working years",
+                          label_visibility="collapsed")
+            
+        # Retirement income  
+        st.markdown("Retirement Income ($/mo)", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input("Retire Inc Self", step=1000, key="retire_income_self",
+                          help="Monthly pension or annuity income",
+                          label_visibility="collapsed")
+        with col2:
+            st.number_input("Retire Inc Spouse", step=1000, key="retire_income_spouse",
+                          help="Monthly pension or annuity income",
+                          label_visibility="collapsed")
+            
+        # Social Security
+        st.markdown("Social Security Income ($/mo)", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input("SSI Self", step=1000, key="socsec_income_self",
+                          help="Expected monthly Social Security benefit",
+                          label_visibility="collapsed")
+        with col2:
+            st.number_input("SSI Spouse", step=1000, key="socsec_income_spouse",
+                          help="Expected monthly Social Security benefit",
+                          label_visibility="collapsed")
+
+def render_spending_section():
+    """Render the spending section of the sidebar"""
+    with st.sidebar.expander("💳 Monthly Spend", expanded=False):
+
+        st.number_input("Retirement Needed Spend ($/mo)", step=1000, key="retire_need_spend",
+                    help="Essential monthly expenses in retirement")
+
+        st.number_input("Incremental Luxury Spend ($/mo)", step=1000, key="retire_luxury_spend",
+                    help="Optional spending when market performs well")
+
+        st.number_input("Assisted Living Spend ($/mo)", step=1000, key="retire_assisted",
+                    help="Monthly assisted living or care costs")
+
+
+def render_timing_section():
+    """Render the timing section of the sidebar"""
+    with st.sidebar.expander("📅 Timing", expanded=False):
+        st.markdown("<br><b style='color:#093824'>Self</b><br>", unsafe_allow_html=True)
+        
+        # Self timing inputs
+        st.date_input("Birthday", key="birthday_self", min_value=min_birthdate, max_value=today_date, 
+                     help="Your date of birth")
+        st.date_input("Retirement Date", key="retire_date_self", min_value=min_retiredate, max_value=max_retire_date_self, 
+                     help="When you plan to stop working")
+        st.date_input("Pension/distribution start date", key="pension_date_self", min_value=min_retiredate, max_value=max_retire_date_self,
+                     help="When pension or distributions begin")
+        st.date_input("Social security start date", key="socsec_date_self", min_value=min_retiredate, max_value=max_retire_date_self,
+                     help="When you'll begin taking Social Security")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input("Assisted Living Age", key="assisted_age_self", step=1,
+                           help="Age when you might need assisted living")
+        with col2:
+            st.number_input("Life Expectancy", key="life_expectancy_self", step=1,
+                           help="Your estimated life expectancy")
+
+        # Spouse timing inputs
+        st.markdown("<br><b style='color:#093824'>Spouse</b><br>", unsafe_allow_html=True)
+        
+        st.date_input("Birthday", key="birthday_spouse", min_value=min_birthdate, max_value=today_date,
+                     help="Your spouse's date of birth")
+        st.date_input("Retirement Date", key="retire_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse,
+                     help="When your spouse plans to retire")
+        st.date_input("Pension/distribution start date", key="pension_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse,
+                     help="When spouse's pension or distributions begin")
+        st.date_input("Social security start date", key="socsec_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse,
+                     help="When your spouse will begin taking Social Security")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.number_input("Assisted Living Age", key="assisted_age_spouse", step=1,
+                           help="Age when spouse might need assisted living")
+        with col2:
+            st.number_input("Life Expectancy", key="life_expectancy_spouse", step=1,
+                           help="Spouse's estimated life expectancy")
+        
+        st.markdown("<br><small style='color:#093824'>Use 2020/01/01 for retirement, pension, and social security dates in the past.</small><br>", unsafe_allow_html=True)
+
+def render_portfolio_section():
+    """Render the portfolio section of the sidebar"""
+    with st.sidebar.expander("💰 Portfolio", expanded=False):
+        st.markdown("<br><b style='color:#093824'>Savings</b><br>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.number_input("Current Cash Savings", step=1000, key="current_cash",
+                           help="Emergency fund and short-term cash needs")
+        with col2:
+            st.markdown("<div style='padding-top:33px'>$</div>", unsafe_allow_html=True)
+            
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.number_input("Desired Cash On Hand", step=1000, key="cash_set_point",
+                           help="Target minimum cash balance")
+        with col2:
+            st.markdown("<div style='padding-top:33px'>$</div>", unsafe_allow_html=True)
+            
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.number_input("Current Investment Savings", step=1000, key="current_investment",
+                           help="Current value of investment accounts")
+        with col2:
+            st.markdown("<div style='padding-top:33px'>$</div>", unsafe_allow_html=True)
+            
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.number_input("Stock allocation before retirement", key="stock_allocation_pre_retirement", 
+                          step=10, min_value=0, max_value=100,
+                          help="Percentage of portfolio in stocks before retirement")
+        with col2:
+            st.markdown("<div style='padding-top:33px'>%</div>", unsafe_allow_html=True)
+            
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.number_input("Stock allocation after retirement", key="stock_allocation_post_retirement", 
+                          step=10, min_value=0, max_value=100,
+                          help="Percentage of portfolio in stocks after retirement")
+        with col2:
+            st.markdown("<div style='padding-top:33px'>%</div>", unsafe_allow_html=True)
+
+def render_rates_section():
+    """Render the rates section of the sidebar"""
+    # Hide selectbox label visually
+    st.markdown("<style>div[data-testid='stSelectbox'] label {display: none;}</style>", unsafe_allow_html=True)
+    
+    with st.sidebar.expander("📈 Rates", expanded=False):
+        st.markdown("<br><b>Enter static values, use historical averages from 1928-2024, or see a simulation using past rates</b><br>", unsafe_allow_html=True)
+        
+        rate_mode = st.selectbox(" ", ["User Input", "Historical", "Simulation"], 
+                               index=2, key="rate_mode",
+                               help="Choose how to model future returns")
+
+        if rate_mode == "User Input":
+            st.markdown("<br><b>Static Rate Inputs as Annual Average</b><br>", unsafe_allow_html=True)
+            
+            st.number_input("Inflation Rate (%)", step=0.1, key="inflation",
+                               min_value=0.1, max_value=10.0,
+                               help="Annual inflation rate")
+
+            st.number_input("Return on Cash (%)", step=0.1, key="return_cash",
+                               min_value=0.1, max_value=10.0,
+                               help="Expected return on cash/money market")
+
+
+            st.number_input("Return on Stocks (%)", step=0.1, key="return_stock", 
+                               min_value=0.1, max_value=15.0,
+                               help="Expected annual return on stocks")
+                
+            st.number_input("Return on Bonds (%)", step=0.1, key="return_bond", 
+                               min_value=0.1, max_value=15.0,
+                               help="Expected annual return on bonds")
+
 
 # --- Utilities ---
 def load_css(file_path):
@@ -301,67 +492,8 @@ st.title("Retirement Savings Model")
 # Add the data management UI to sidebar
 render_data_management_ui()
 
-st.sidebar.markdown("<br><b style='color:#061826'>Enter your values below</b><br>", unsafe_allow_html=True)
-
-with st.sidebar.expander("🤑 Income", expanded=False):
-    st.markdown("<br><b style='color:#093824'>Monthly Income (Self)</b><br>", unsafe_allow_html=True)
-    st.number_input("Savings Before Retirement ($)", step=1000, key="current_contribution_self")
-    st.number_input("Retirement Income ($)", step=1000, key="retire_income_self")
-    st.number_input("Social Security Income ($)", step=1000, key="socsec_income_self")
-
-    st.markdown("<br><b style='color:#093824'>Monthly Income (Spouse)</b><br>", unsafe_allow_html=True)
-    st.number_input("Savings Before Retirement ($)", step=1000, key="current_contribution_spouse")
-    st.number_input("Retirement Income ($)", step=1000, key="retire_income_spouse")
-    st.number_input("Social Security Income ($)", step=1000, key="socsec_income_spouse")
-
-with st.sidebar.expander("💳 Spend", expanded=False):
-    st.markdown("<br><b style='color:#093824'>Monthly Spending</b><br>", unsafe_allow_html=True)
-    st.number_input("Retirement Needed Spend ($)", step=1000, key="retire_need_spend")
-    st.number_input("Incremental Luxury Spend ($)", step=1000, key="retire_luxury_spend")
-    st.number_input("Assisted Living Spend ($)", step=1000, key="retire_assisted")
-
-
-with st.sidebar.expander("📅 Timing", expanded=False):
-    st.markdown("<br><b style='color:#093824'>Self</b><br>", unsafe_allow_html=True)
-    st.date_input("Birthday", key="birthday_self",min_value=min_birthdate, max_value=today_date)
-    st.date_input("Retirement Date", key="retire_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.date_input("Pension/distribution start date", key="pension_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.date_input("Social security start date", key="socsec_date_self", min_value=min_retiredate, max_value=max_retire_date_self)
-    st.number_input("Assisted Living Age", key="assisted_age_self", step=1)
-    st.number_input("Life Expectancy", key="life_expectancy_self", step=1)
-
-    st.markdown("<br><b style='color:#093824'>Spouse</b><br>", unsafe_allow_html=True)
-    st.date_input("Birthday", key="birthday_spouse",min_value=min_birthdate, max_value=today_date)
-    st.date_input("Retirement Date", key="retire_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.date_input("Pension/distribution start date", key="pension_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.date_input("Social security start date", key="socsec_date_spouse", min_value=min_retiredate, max_value=max_retire_date_spouse)
-    st.number_input("Assisted Living Age", key="assisted_age_spouse", step=1)
-    st.number_input("Life Expectancy", key="life_expectancy_spouse", step=1)
-    
-    st.markdown("<br><small style='color:#093824'>Use 2020/01/01 for retirement, pension, and social security dates in the past.</small><br>", unsafe_allow_html=True)
-
-with st.sidebar.expander("💰 Portfolio", expanded=False):
-    st.markdown("<br><b style='color:#093824'>Savings</b><br>", unsafe_allow_html=True)
-    st.number_input("Current Cash Savings ($)", step=1000, key="current_cash")
-    st.number_input("Desired Cash On Hand ($)", step=1000, key="cash_set_point")
-    st.number_input("Current Investment Savings ($)", step=1000, key="current_investment")
-    st.number_input("Stock (vs. bonds) allocation before retirement (%)", key="stock_allocation_pre_retirement", step=10, min_value=0, max_value=100)
-    st.number_input("Stock (vs. bonds) allocation after retirement (%)", key="stock_allocation_post_retirement", step=10, min_value=0, max_value=100)
-
-# Hide selectbox label visually
-st.markdown("<style>div[data-testid='stSelectbox'] label {display: none;}</style>", unsafe_allow_html=True)
-
-with st.sidebar.expander("📈 Rates", expanded=False):
-    st.markdown("<br><b>Enter static values, use historical averages from 1928-2024, or see a simulation using past rates</b><br>", unsafe_allow_html=True)
-    rate_mode = st.selectbox(" ", ["User Input","Historical","Simulation"], index=2, key="rate_mode")
-
-    if rate_mode == "User Input":
-        st.markdown("<br><b>Static Rate Inputs</b><br>", unsafe_allow_html=True)
-        st.number_input("Inflation Rate (%)", step=0.1, key="inflation", min_value=0.1, max_value=10.0)
-        st.number_input("Return on Cash (%)", step=0.1, key="return_cash", min_value=0.1, max_value=10.0)
-        st.number_input("Return on Stocks (%)", step=0.1, key="return_stock", min_value=0.1, max_value=15.0)
-        st.number_input("Return on Bonds (%)", step=0.1, key="return_bond", min_value=0.1, max_value=15.0)
-
+# Add the sidebar UI to the sidebar 
+render_sidebar_ui()
 
 # --- Calculations ---
 
@@ -526,7 +658,7 @@ def run_simulation(mode="Historical",rate_table_sample=None):
     })
 
 with st.spinner("Running simulations..."):
-    if rate_mode == "Simulation":
+    if st.session_state.rate_mode == "Simulation":
         results = run_simulation(mode="Historical")
         last_value = results['Total'].iloc[-1]
         
@@ -534,7 +666,7 @@ with st.spinner("Running simulations..."):
         all_totals = []
         for _ in range(n_simulations):
             sample = rate_table.sample(n=months, replace=True).reset_index(drop=True)
-            sim_result = run_simulation(mode=rate_mode,rate_table_sample=sample)
+            sim_result = run_simulation(mode=st.session_state.rate_mode,rate_table_sample=sample)
             all_totals.append(sim_result["Total"].values)
 
         simulation_df = pd.DataFrame(all_totals).T  # Transpose so rows = months, columns = runs
@@ -545,7 +677,7 @@ with st.spinner("Running simulations..."):
 
     else:
         n_simulations = 1
-        results = run_simulation(mode=rate_mode)
+        results = run_simulation(mode=st.session_state.rate_mode)
         last_value = results['Total'].iloc[-1]
 
 def plot_outcome(mode="Historical",results=None):
@@ -560,9 +692,9 @@ def plot_outcome(mode="Historical",results=None):
 
         fig, ax = plt.subplots(figsize=(12, 4))
 
-        ax.fill_between(dates, p10 / 1e6, p90 / 1e6, color="lightblue", alpha=0.5, label="10th–90th Percentile")
-        ax.fill_between(dates, p25 / 1e6, p75 / 1e6, color="cornflowerblue", alpha=0.5, label="25th–75th Percentile")
-        ax.plot(dates, mean / 1e6, color="blue", label="Most Likely Outcome", linewidth=2)
+        ax.fill_between(dates, p10 / 1e6, p90 / 1e6, color="#8B8BAE", alpha=0.5, label="10th–90th Percentile")
+        ax.fill_between(dates, p25 / 1e6, p75 / 1e6, color="#28A745", alpha=0.5, label="25th–75th Percentile")
+        ax.plot(dates, mean / 1e6, color="#093824", label="Most Likely Outcome", linewidth=2)
         ax.plot(dates, historical / 1e6, color="red", label="Historical", linewidth=2)
         ax.set_xlabel("Year")
         ax.set_ylabel("Portfolio Value ($M)")
@@ -583,14 +715,14 @@ tab1, tab2, tab3 = st.tabs(["📊 Graph", "📋 Data", "⚙️ Methodology"])
 
 with tab1:
 
-    if rate_mode == "Simulation":
+    if st.session_state.rate_mode == "Simulation":
         final_val = f"${last_value_likely/1e6:,.1f}M"
-        fig = plot_outcome(mode=rate_mode, results=simulation_df)
+        fig = plot_outcome(mode=st.session_state.rate_mode, results=simulation_df)
     else:
         final_val = f"${last_value/1e6:,.1f}M"
-        fig = plot_outcome(mode=rate_mode, results=results)
+        fig = plot_outcome(mode=st.session_state.rate_mode, results=results)
 
-    st.markdown("#### Projected Portfolio Value")
+    st.markdown("##### Projected Portfolio Value")
     st.markdown(f"<div style='font-size: 0.9em; color: #28A745; font-weight: bold'>Expected value at end of life: {final_val}</div>", unsafe_allow_html=True)
 
     st.caption("All values in today's dollars (inflation adjusted)")
@@ -598,15 +730,15 @@ with tab1:
     st.pyplot(fig, use_container_width=True)
 
     # Metrics and explanatory note
-    if rate_mode == "Simulation":
+    if st.session_state.rate_mode == "Simulation":
         st.caption(
-            "ℹ️ *Most Likely Outcome is typically higher than Historical due to how luxury spend is modeled.* "
+            "*Most Likely Outcome is typically higher than Historical due to how luxury spend is modeled.* "
             "Luxury spending only occurs when stock returns exceed inflation. In historical mode, this is applied evenly; "
             "in simulation, it's dynamically based on each month's return."
         )      
 
 with tab2:
-    if rate_mode == "Simulation":
+    if st.session_state.rate_mode == "Simulation":
         st.markdown("**Historical Average Returns (used in simulation baseline):**")
     st.dataframe(results, use_container_width=True)
 
@@ -623,7 +755,7 @@ with tab3:
 
         #### 📈 2. We Estimate Future Growth
         Each month, your investments (like cash, bonds, and stocks) are expected to change in value. These changes can come from:
-        - Sampled historical data (to simulate possible futures),
+        - Sampled historical data (to simulate possible futures using 100 runs),
         - Fixed return values you choose,
         - Or long-term average returns.
 
