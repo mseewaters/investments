@@ -1,4 +1,5 @@
 user_inputs.json
+retirementapp.zip
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
