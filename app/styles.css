@@ -71,4 +71,96 @@ button:hover, .stButton>button:hover {
     font-weight: bolder;
 }
 
+/* Enhanced styling elements */
 
+/* Data ID Display */
+.data-id-display {
+    background-color: #F4F4ED;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    margin: 0.5rem 0;
+    border-left: 3px solid #28A745;
+    word-break: break-all;
+    font-size: 0.85rem;
+}
+
+/* Section headers in sidebar */
+.section-header {
+    color: #093824;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 1rem 0 0.5rem 0;
+    border-bottom: 1px solid #8B8BAE;
+    padding-bottom: 0.3rem;
+}
+
+/* Subsection headers */
+.subsection-header {
+    color: #374B4A;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0.7rem 0 0.3rem 0;
+}
+
+/* Input fields */
+[data-testid="stNumberInput"] label {
+    font-size: 0.9rem;
+    color: #374B4A;
+}
+
+/* Help text and captions */
+.help-text {
+    color: #8B8BAE;
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-top: 0.2rem;
+}
+
+/* Tab styling (for data management) */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background-color: #F4F4ED;
+    border-radius: 4px 4px 0 0;
+    padding: 0.5rem 1rem;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #E9ECEF;
+    border-top: 2px solid #28A745;
+}
+
+/* Column layout in forms */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 0.5rem;
+}
+
+.form-label {
+    flex: 3;
+}
+
+.form-value {
+    flex: 2;
+    text-align: right;
+}
+
+/* Password input styling */
+[data-testid="stTextInput"] input[type="password"] {
+    border-radius: 4px;
+    border: 1px solid #8B8BAE;
+    padding: 0.5rem;
+}
+
+/* Primary vs secondary buttons */
+.primary-button button {
+    background-color: #28A745;
+}
+
+.secondary-button button {
+    background-color: #8B8BAE;
+}
