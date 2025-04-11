@@ -2,6 +2,7 @@ user_inputs.json
 retirementapp.zip
 app/retirement2.py
 .mypy_cache/
+ingorefiles/
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
