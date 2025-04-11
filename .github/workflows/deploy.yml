@@ -29,5 +29,5 @@ jobs:
 
       - name: Deploy to Elastic Beanstalk
         run: |
-          eb init -p docker my-eb-app --region us-east-1
-          eb deploy my-eb-env
+          eb init -p docker retirement-app --region us-east-1
+          eb deploy retirement-app-env

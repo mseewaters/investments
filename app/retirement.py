@@ -232,6 +232,7 @@ def render_sidebar_ui():
     """Render the entire sidebar UI with all input sections"""
     st.sidebar.markdown("---")
     st.sidebar.markdown("<b style='font-size: 1.3em; color:#061826'>Enter your information below</b>", unsafe_allow_html=True)
+    st.sidebar.caption("*When making bulk changes, set rates to historical rather than simulation.*", unsafe_allow_html=True)
     
     # Render each section of the sidebar
     render_income_section()
@@ -467,7 +468,7 @@ defaults = {
     "cash_set_point": 50000,
     "stock_allocation_pre_retirement": 80,
     "stock_allocation_post_retirement": 50,
-    "rate_mode": "Simulation",
+    "rate_mode": "Historical",
 }
 
 for k, v in defaults.items():
@@ -743,47 +744,63 @@ with tab2:
     st.dataframe(results, use_container_width=True)
 
 with tab3:
-    st.markdown("### ⚙️ How the Forecast Is Created")
-
     st.markdown("""
-        This retirement forecast estimates your future finances month by month, starting today and continuing through the end of life for you and your spouse. It considers your income, spending, savings, and how your money might grow or shrink over time.
+        <h4>How Your Retirement Forecast Works</h4>
+        <p>This retirement forecast creates a personalized financial roadmap from today through your and your spouse's lifetimes. We analyze your income, spending patterns, savings strategy, and potential investment growth to provide a comprehensive outlook.</p>
+        <div class="methodology-divider"></div>
 
-        ---
+        <h5>🗓️ Building Your Timeline</h5>
+        <p>We begin by mapping your complete financial journey—from today until the end of the longest expected life. Each month along this path represents a calculation point in your financial future.</p>
 
-        #### 🗓️ 1. We Build a Timeline
-        We start by figuring out how long to run the forecast — from today until the end of the longest expected life. Every month between now and then is included in the simulation.
+        <h5>📈 Projecting Investment Growth</h5>
+        <p>Your investments evolve monthly based on market conditions. We model this using:</p>
+        <ul>
+        <li><b>Simulation Mode</b>: 100 different possible futures based on randomly sampled historical market performance</li>
+        <li><b>User Input Mode</b>: Custom returns you specify for each asset class</li>
+        <li><b>Historical Mode</b>: Long-term average returns from market history</li>
+        </ul>
+        <p>All projections account for inflation, ensuring values reflect today's purchasing power.</p>
 
-        #### 📈 2. We Estimate Future Growth
-        Each month, your investments (like cash, bonds, and stocks) are expected to change in value. These changes can come from:
-        - Sampled historical data (to simulate possible futures using 100 runs),
-        - Fixed return values you choose,
-        - Or long-term average returns.
+        <h5>💰 Tracking Your Cash Flow</h5>
+        <p>Every month in your timeline includes:</p>
+        <ul>
+        <li><b>Income Sources</b>
+        <ul>
+            <li>Pre-retirement contributions</li>
+            <li>Retirement income (pensions, distributions)</li>
+            <li>Social security benefits</li>
+        </ul>
+        </li>
+        <li><b>Spending Needs</b>
+        <ul>
+            <li>Essential monthly expenses</li>
+            <li>Optional luxury spending (activated only when markets perform well)</li>
+            <li>Later-life assisted living costs</li>
+        </ul>
+        </li>
+        </ul>
 
-        We also include inflation — the general rise in prices over time — to keep everything in today’s dollars.
+        <h5>🔁 Managing Your Portfolio</h5>
+        <p>The system actively manages your finances by:</p>
+        <ul>
+        <li>Depositing surplus income into cash reserves</li>
+        <li>Drawing from cash first when expenses exceed income</li>
+        <li>Transferring funds from investments when cash reserves fall below your target</li>
+        <li>Automatically adjusting your investment allocation at retirement</li>
+        </ul>
 
-        #### 💰 3. We Track Money In and Out
-        Every month, we calculate:
-        - **Income**: Money you contribute before retirement, plus pensions and other income after.
-        - **Spending**: Monthly needs, luxury spending (if the market does well), and assisted care costs in later years.
+        <h5>🧮 Inflation Adjustment</h5>
+        <p>To provide meaningful insights, all future values are converted to today's dollars, letting you understand your future purchasing power in familiar terms.</p>
 
-        #### 🔁 4. We Update Your Balances
-        Each month:
-        - Extra income adds to cash.
-        - If income isn’t enough, we withdraw from cash and investments.
-        - If cash gets too low, we move money from investments.
-        - Your investment mix shifts gradually once you're retired.
+        <h5>📊 Visualizing Your Future</h5>
+        <p>The forecast presents:</p>
+        <ul>
+        <li>Portfolio value projections over time</li>
+        <li>Monthly income vs. spending patterns</li>
+        <li>Age-triggered expenses like assisted living</li>
+        <li>Clear indicators of financial sustainability</li>
+        </ul>
 
-        #### 🧮 5. We Show Everything in Today’s Dollars
-        To make results meaningful, all future amounts are adjusted for inflation so you can understand them in today’s terms.
-
-        #### 📊 6. We Share the Results
-        You’ll see:
-        - How your money changes over time
-        - Your income and spending
-        - Age-based costs
-        - Whether your savings support your lifestyle
-
-        ---
-
-        This helps you explore different scenarios and make informed choices about your retirement plans.
-        """)
+        <div class="methodology-divider"></div>
+        <p class="methodology-footer">This interactive model lets you explore different retirement scenarios and make confident decisions about your financial future.</p>
+        """, unsafe_allow_html=True)

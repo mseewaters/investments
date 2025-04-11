@@ -164,3 +164,36 @@ button:hover, .stButton>button:hover {
 .secondary-button button {
     background-color: #8B8BAE;
 }
+
+/* Methodology explanation styling */
+.methodology-container {
+    background-color: #f8f9fa;
+    border-radius: 0px;
+    padding: 0px;
+    border-left: 0px solid #8B8BAE;
+    margin-bottom: 0px;
+  }
+  
+  .methodology-title {
+    font-size: 1.2rem;
+    margin-bottom: 0px;
+  }
+  
+  .methodology-section h3 {
+    color: #8B8BAE;
+    font-weight: 600;
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+  
+  .methodology-divider {
+    margin: 20px 0 20px 0;
+    border-top: 1px solid #eaecef;
+  }
+  
+  .methodology-footer {
+    font-style: italic;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 0px;
+  }
