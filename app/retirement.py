@@ -106,6 +106,8 @@ def load_state_from_s3(user_id, password):
         
         # Update session state
         for k, v in data.items():
+            if k in ("existing_password", "new_password"):
+                continue  # avoid overwriting widget keys
             if "date" in k or "birthday" in k:
                 v = datetime.date.fromisoformat(v)
             st.session_state[k] = v
@@ -197,7 +199,7 @@ def render_data_management_ui():
                     help="Enter your Data ID from a previous session"
                 )
                 
-                password = st.text_input(
+                existing_password_input = st.text_input(
                     "Your password", 
                     type="password",
                     key="existing_password",
@@ -207,10 +209,10 @@ def render_data_management_ui():
                 if st.button("📂 Load Existing Data", use_container_width=True):
                     if not existing_id:
                         st.error("Please enter your Data ID")
-                    elif not password:
+                    elif not existing_password_input:
                         st.error("Please enter your password")
                     else:
-                        if load_state_from_s3(existing_id, password):
+                        if load_state_from_s3(existing_id, existing_password_input):
                             st.success("Data loaded!")
                             st.session_state['user_id'] = existing_id
                             # Store in browser
